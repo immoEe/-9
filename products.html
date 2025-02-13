@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>СкладОПТ - Рабочий портал</title>
+    <title>СкладОПТ - Управление продукцией</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -24,33 +24,50 @@
     </header>
 
     <main class="content">
-        <section class="news-grid">
-            <article class="news-card">
-                <h3>Обновление системы инвентаризации</h3>
-                <time datetime="2024-03-15">15 Марта 2024</time>
-                <p>Внедрена новая система учета товаров с мобильным интерфейсом...</p>
-            </article>
-            <article class="news-card">
-                <h3>Обновление системы инвентаризации</h3>
-                <time datetime="2024-03-15">15 Марта 2024</time>
-                <p>Внедрена новая система учета товаров с мобильным интерфейсом...</p>
-            </article>
-            <article class="news-card">
-                <h3>Обновление системы инвентаризации</h3>
-                <time datetime="2024-03-15">15 Марта 2024</time>
-                <p>Внедрена новая система учета товаров с мобильным интерфейсом...</p>
-            </article>
-            <article class="news-card">
-                <h3>Обновление системы инвентаризации</h3>
-                <time datetime="2024-03-15">15 Марта 2024</time>
-                <p>Внедрена новая система учета товаров с мобильным интерфейсом...</p>
-            </article>
-        </section>
+        <div class="products-controls">
+            <input type="text" id="searchInput" placeholder="Поиск по названию...">
+            <button class="button" id="addProductBtn">Добавить товар</button>
+        </div>
+        
+        <div class="products-list" id="productsList">
+        </div>
     </main>
 
-    <footer class="main-footer">
-        <p>© 2025 Челябинск. Все права защищены</p>
-    </footer>
+    <div class="modal-overlay" id="productModal">
+        <div class="modal">
+            <form id="productForm">
+                <button type="button" class="close-btn">&times;</button>
+                <h2 id="modalTitle">Новый товар</h2>
+                
+                <div class="form-group">
+                    <label>Название:</label>
+                    <input type="text" id="productName" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Количество:</label>
+                    <input type="number" id="productQuantity" min="0" required>
+                </div>
+                
+                <div class="form-group">
+                    <label>Единица измерения:</label>
+                    <select id="productUnit" required>
+                        <option value="шт">Штуки</option>
+                        <option value="ед">Единицы</option>
+                        <option value="кг">Килограммы</option>
+                        <option value="л">Литры</option>
+                        <option value="усл.ед">Условные единицы</option>
+                    </select>
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="button">Сохранить</button>
+                    <button type="button" class="button cancel-btn">Отмена</button>
+                    <button type="button" class="button delete-btn" id="deleteBtn" style="display: none;">Удалить</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="modal-overlay" id="authOverlay">
         <div class="modal">
             <form class="auth-form active" id="loginForm">
