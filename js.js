@@ -9,17 +9,20 @@ class ProductManager {
     constructor() {
         this.products = JSON.parse(localStorage.getItem('products')) || [];
         this.currentEditIndex = null;
-        
         this.initEvents();
         this.renderProducts();
     }
 
     initEvents() {
-        document.getElementById('addProductBtn').addEventListener('click', () => this.openModal());
-        document.getElementById('searchInput').addEventListener('input', (e) => this.searchProducts(e.target.value));
-        document.getElementById('productForm').addEventListener('submit', (e) => this.handleSubmit(e));
+        const addBtn = document.getElementById('addProductBtn');
+        const search = document.getElementById('searchInput');
+        
+        if(addBtn) addBtn.addEventListener('click', () => this.openModal());
+        if(search) search.addEventListener('input', (e) => this.searchProducts(e.target.value));
+        
+        document.getElementById('productForm')?.addEventListener('submit', (e) => this.handleSubmit(e));
         document.querySelectorAll('.cancel-btn').forEach(btn => btn.addEventListener('click', () => this.closeModal()));
-        document.getElementById('deleteBtn').addEventListener('click', () => this.deleteProduct());
+        document.getElementById('deleteBtn')?.addEventListener('click', () => this.deleteProduct());
     }
 
     openModal(index = null) {
@@ -39,7 +42,6 @@ class ProductManager {
             document.getElementById('productForm').reset();
             deleteBtn.style.display = 'none';
         }
-        
         modal.classList.add('active');
     }
 
@@ -50,7 +52,6 @@ class ProductManager {
 
     handleSubmit(e) {
         e.preventDefault();
-        
         const product = {
             name: document.getElementById('productName').value.trim(),
             quantity: parseInt(document.getElementById('productQuantity').value),
@@ -83,9 +84,7 @@ class ProductManager {
     }
 
     searchProducts(query) {
-        const filtered = this.products.filter(product => 
-            product.name.toLowerCase().includes(query.toLowerCase())
-        );
+        const filtered = this.products.filter(p => p.name.toLowerCase().includes(query.toLowerCase()));
         this.renderProducts(filtered);
     }
 
@@ -95,14 +94,163 @@ class ProductManager {
 
     renderProducts(products = this.products) {
         const list = document.getElementById('productsList');
-        list.innerHTML = products.map((product, index) => `
+        if(!list) return;
+        
+        list.innerHTML = products.map((p, i) => `
             <div class="product-item">
                 <div class="product-info">
-                    <h3>${product.name}</h3>
-                    <p>${product.quantity} ${product.unit}</p>
+                    <h3>${p.name}</h3>
+                    <p>${p.quantity} ${p.unit}</p>
                 </div>
                 <div class="product-actions">
-                    <button class="button" onclick="productManager.openModal(${index})">✎</button>
+                    <button class="button" onclick="productManager.openModal(${i})">✎</button>
+                </div>
+            </div>
+        `).join('');
+    }
+}
+
+class OrderManager {
+    constructor() {
+        this.orders = JSON.parse(localStorage.getItem('orders')) || this.getDemoOrders();
+        this.currentEditIndex = null;
+        this.initEvents();
+        this.renderOrders();
+        this.saveOrders();
+    }
+
+    getDemoOrders() {
+        return [
+            this.createDemoOrder("ООО 'СтройМаркет'", "Цемент М500 - 50 мешков, Плитка напольная - 200 кв.м", "В процессе"),
+            this.createDemoOrder("ИП Петров", "Краска масляная - 30 банок, Кисти малярные - 15 шт", "Выполнен"),
+            this.createDemoOrder("Магазин 'Теплый Дом'", "Радиаторы алюминиевые - 40 шт, Трубы полипропиленовые - 100 м", "Отклонен"),
+            this.createDemoOrder("СкладХолод", "Холодильные камеры - 3 шт, Стеллажи металлические - 20 шт", "В процессе")
+        ];
+    }
+
+    createDemoOrder(company, products, status) {
+        return {
+            number: this.generateOrderNumber(),
+            company,
+            products,
+            status,
+            date: new Date().toISOString().split('T')[0]
+        };
+    }
+
+    generateOrderNumber() {
+        const datePart = new Date().toISOString().slice(0,10).replace(/-/g, '');
+        const randomPart = Math.floor(1000 + Math.random() * 9000);
+        return `${datePart}-${randomPart}`;
+    }
+
+    initEvents() {
+        const addBtn = document.getElementById('addOrderBtn');
+        const search = document.getElementById('orderSearch');
+        
+        if(addBtn) addBtn.addEventListener('click', () => this.openModal());
+        if(search) search.addEventListener('input', (e) => this.searchOrders(e.target.value));
+        
+        document.getElementById('orderForm')?.addEventListener('submit', (e) => this.handleSubmit(e));
+        document.querySelectorAll('.cancel-btn').forEach(btn => btn.addEventListener('click', () => this.closeModal()));
+        document.getElementById('orderDeleteBtn')?.addEventListener('click', () => this.deleteOrder());
+    }
+
+    openModal(index = null) {
+        this.currentEditIndex = index;
+        const modal = document.getElementById('orderModal');
+        const deleteBtn = document.getElementById('orderDeleteBtn');
+        
+        if (index !== null) {
+            document.getElementById('orderModalTitle').textContent = 'Редактирование заказа';
+            const order = this.orders[index];
+            document.getElementById('orderNumber').value = order.number;
+            document.getElementById('orderCompany').value = order.company;
+            document.getElementById('orderProducts').value = order.products;
+            document.getElementById('orderStatus').value = order.status;
+            document.getElementById('orderDate').value = order.date;
+            deleteBtn.style.display = 'block';
+        } else {
+            document.getElementById('orderModalTitle').textContent = 'Новый заказ';
+            document.getElementById('orderForm').reset();
+            document.getElementById('orderDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('orderNumber').value = this.generateOrderNumber();
+            deleteBtn.style.display = 'none';
+        }
+        modal.classList.add('active');
+    }
+
+    closeModal() {
+        document.getElementById('orderModal').classList.remove('active');
+        this.currentEditIndex = null;
+    }
+
+    handleSubmit(e) {
+        e.preventDefault();
+        const order = {
+            number: document.getElementById('orderNumber').value.trim(),
+            company: document.getElementById('orderCompany').value.trim(),
+            products: document.getElementById('orderProducts').value.trim(),
+            status: document.getElementById('orderStatus').value,
+            date: document.getElementById('orderDate').value
+        };
+        
+        if (!Object.values(order).every(field => field)) {
+            alert('Заполните все поля!');
+            return;
+        }
+        
+        if (this.currentEditIndex !== null) {
+            this.orders[this.currentEditIndex] = order;
+        } else {
+            this.orders.push(order);
+        }
+        
+        this.saveOrders();
+        this.renderOrders();
+        this.closeModal();
+    }
+
+    deleteOrder() {
+        if (this.currentEditIndex !== null && confirm('Удалить заказ?')) {
+            this.orders.splice(this.currentEditIndex, 1);
+            this.saveOrders();
+            this.renderOrders();
+            this.closeModal();
+        }
+    }
+
+    searchOrders(query) {
+        const filtered = this.orders.filter(o => o.company.toLowerCase().includes(query.toLowerCase()));
+        this.renderOrders(filtered);
+    }
+
+    saveOrders() {
+        localStorage.setItem('orders', JSON.stringify(this.orders));
+    }
+
+    renderOrders(orders = this.orders) {
+        const list = document.getElementById('ordersList');
+        if(!list) return;
+        
+        list.innerHTML = orders.map((o, i) => `
+            <div class="order-item">
+                <div class="order-header">
+                    <h3>Заказ #${o.number}</h3>
+                    <span class="order-status status-${o.status.toLowerCase().replace(' ', '-')}">
+                        ${o.status}
+                    </span>
+                </div>
+                <div class="order-info">
+                    <p><strong>Компания:</strong> ${o.company}</p>
+                    <p><strong>Дата:</strong> ${o.date}</p>
+                    <div class="order-products">
+                        <p><strong>Состав:</strong></p>
+                        <p>${o.products.replace(/,/g, '<br>')}</p>
+                    </div>
+                </div>
+                <div class="product-actions">
+                    <button class="button" onclick="orderManager.openModal(${i})">✎ Редактировать</button>
                 </div>
             </div>
         `).join('');
@@ -110,53 +258,50 @@ class ProductManager {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-    if (document.getElementById('productsList')) {
-        window.productManager = new ProductManager();
+    window.productManager = document.getElementById('productsList') ? new ProductManager() : null;
+    window.orderManager = document.getElementById('ordersList') ? new OrderManager() : null;
+
+    if(authButton) {
+        authButton.addEventListener('click', (e) => {
+            e.preventDefault();
+            authOverlay.classList.add('active');
+            loginForm.classList.add('active');
+            registerForm.classList.remove('active');
+        });
     }
-});
 
-
-authButton.addEventListener('click', (e) => {
-    e.preventDefault();
-    authOverlay.classList.add('active');
-    loginForm.classList.add('active');
-    registerForm.classList.remove('active');
-});
-
-closeBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-        authOverlay.classList.remove('active');
-    });
-});
-
-
-
-switchForms.forEach(link => {
-    link.addEventListener('click', (e) => {
+    closeBtns.forEach(btn => btn.addEventListener('click', () => authOverlay.classList.remove('active')));
+    switchForms.forEach(link => link.addEventListener('click', (e) => {
         e.preventDefault();
         loginForm.classList.toggle('active');
         registerForm.classList.toggle('active');
-    });
-});
+    }));
 
-function handleFormSubmit(e, isLogin) {
-    e.preventDefault();
-    const formData = {};
-    const inputs = e.target.querySelectorAll('input');
-    
-    inputs.forEach(input => {
-        formData[input.placeholder] = input.value;
+    authOverlay.addEventListener('click', (e) => {
+        if(e.target === authOverlay) authOverlay.classList.remove('active');
     });
 
-    authOverlay.classList.remove('active');
-    alert(`${isLogin ? 'Вход выполнен' : 'Регистрация успешна'}!\nДанные: ${JSON.stringify(formData)}`);
-}
+    // Обработчики форм
+    if(loginForm) {
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleAuthForm(e, true);
+        });
+    }
 
-loginForm.addEventListener('submit', (e) => handleFormSubmit(e, true));
-registerForm.addEventListener('submit', (e) => handleFormSubmit(e, false));
-
-authOverlay.addEventListener('click', (e) => {
-    if (e.target === authOverlay) {
-        authOverlay.classList.remove('active');
+    if(registerForm) {
+        registerForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            handleAuthForm(e, false);
+        });
     }
 });
+
+function handleAuthForm(e, isLogin) {
+    const formData = {};
+    const inputs = e.target.querySelectorAll('input');
+    inputs.forEach(input => formData[input.placeholder] = input.value);
+    
+    authOverlay.classList.remove('active');
+    alert(`${isLogin ? 'Вход' : 'Регистрация'} успешна!\nДанные: ${JSON.stringify(formData)}`);
+}
